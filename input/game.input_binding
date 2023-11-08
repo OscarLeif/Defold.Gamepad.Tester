@@ -98,3 +98,15 @@ gamepad_trigger {
   input: GAMEPAD_LSTICK_CLICK
   action: "left_stick_click"
 }
+gamepad_trigger {
+  input: GAMEPAD_CONNECTED
+  action: "connected"
+}
+gamepad_trigger {
+  input: GAMEPAD_DISCONNECTED
+  action: "disconnected"
+}
+gamepad_trigger {
+  input: GAMEPAD_RAW
+  action: "raw"
+}
