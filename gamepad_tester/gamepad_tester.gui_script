@@ -1,5 +1,8 @@
 local STICK_MAX_DISTANCE = 30
 
+local button_states = {}
+local button_states_prev = {}
+
 function init(self)
 	msg.post(".", "acquire_input_focus")
 	self.left_stick = gui.get_node("left_stick")
@@ -10,33 +13,36 @@ function init(self)
 	self.right_stick_value = vmath.vector3()
 	print("JJKJJ")
 	pprint(sys.get_sys_info())
+
+	-- Initialize button states for 32 possible buttons
+	for i = 1, 32 do
+		button_states[i] = 0
+		button_states_prev[i] = 0
+	end
 end
 
 function final(self)
 	msg.post(".", "release_input_focus")
 end
 
+local function table_to_string(t)
+	if not t then return "nil" end
+	local result = ""
+	if sys.get_sys_info().system_name == "Android" then
+		for i = 1, #t do
+			result = result .. i .. ": " .. tostring(t[i]) .. "\n"
+		end
+	end
+	return result
+end
+
 function on_input(self, action_id, action)
 	if action_id == hash("raw") then
-		local function table_to_string(t)
-			if not t then return "nil" end
-			local result = ""
 
-			-- Start from index 0 for display
-			-- to match the Android values
-			-- see: https://defold.com/manuals/input-gamepads/
-			-- Gamepads on Android Table values
-			if sys.get_sys_info().system_name == "Android" then
-				for i = 1, #t do
-					result = result .. (i - 1) .. ": " .. tostring(t[i]) .. "\n"
-				end
-			else
-				for i = 1, #t do
-                    result = result .. i .. ": " .. tostring(t[i]) .. "\n"
-                end
-			end
-			return result
-		end
+		--copy the button states
+		for i = 1, #action.gamepad_buttons do
+            button_states[i] = action.gamepad_buttons[i]
+        end
 
 		-- Convert gamepad data tables to string format
 		local buttons_text = "Buttons:\n" .. table_to_string(action.gamepad_buttons)
@@ -103,7 +109,27 @@ function on_input(self, action_id, action)
 	end
 end
 
-function on_reload(self)
-	-- Add input-handling code here
-	-- Remove this function if not needed
+-- Function to check if a button was pressed in the current frame
+function was_pressed_this_frame(button)
+    -- Button is pressed if it was previously 0 and is now 1
+    return button_states[button] == 1 and button_states_prev[button] == 0
+end
+
+--@package
+---@param self gamepad_tester.gui_script
+---@param dt number
+function update(self, dt)
+	
+	-- Check each button to see if it was pressed this frame
+	for i = 1, #button_states do
+        if was_pressed_this_frame(i) then
+            print("Button " .. i .. " was pressed this frame.")
+            -- Trigger any action needed for the button press
+        end
+    end
+
+	-- Update previous states at the end of the frame
+    for i = 1, #button_states do
+        button_states_prev[i] = button_states[i]
+    end
 end
