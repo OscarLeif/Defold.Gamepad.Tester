@@ -35,8 +35,8 @@ M.LEFT_JOYSTICK_HORIZONTAL = 1
 M.LEFT_JOYSTICK_VERTICAL = 2
 M.RIGHT_JOYSTICK_HORIZONTAL = 3
 M.RIGHT_JOYSTICK_VERTICAL = 4
-M.L2 = 5
-M.R2 = 6
+M.L2 = 5 --axis
+M.R2 = 6 -- axis
 -- Axis dead zone threshold (ignore small movements)
 local DEAD_ZONE = 0.2
 

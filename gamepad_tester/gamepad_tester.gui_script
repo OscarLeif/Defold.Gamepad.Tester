@@ -24,6 +24,14 @@ function init(self)
 	self.button_back = gui.get_node("gamepad_back")
 	self.button_start = gui.get_node("gamepad_start")
 
+	self.left_pad_up = gui.get_node("left_pad_up")
+	self.left_pad_down = gui.get_node("left_pad_down")
+	self.left_pad_left = gui.get_node("left_pad_left")
+	self.left_pad_right = gui.get_node("left_pad_right")
+
+	self.left_trigger = gui.get_node("gamepad_ltrigger")
+	self.right_trigger = gui.get_node("gamepad_rtrigger")
+
 	print("JJKJJ")
 	pprint(sys.get_sys_info())
 
@@ -51,15 +59,13 @@ local function table_to_string(t)
 end
 
 function on_input(self, action_id, action)
-
-	android_gamepad.on_input(action_id,action)
+	android_gamepad.on_input(action_id, action)
 
 	if action_id == hash("raw") then
-
 		--copy the button states
 		for i = 1, #action.gamepad_buttons do
-            button_states[i] = action.gamepad_buttons[i]
-        end
+			button_states[i] = action.gamepad_buttons[i]
+		end
 
 		-- Convert gamepad data tables to string format
 		local buttons_text = "Buttons:\n" .. table_to_string(action.gamepad_buttons)
@@ -128,8 +134,8 @@ end
 
 -- Function to check if a button was pressed in the current frame
 function was_pressed_this_frame(button)
-    -- Button is pressed if it was previously 0 and is now 1
-    return button_states[button] == 1 and button_states_prev[button] == 0
+	-- Button is pressed if it was previously 0 and is now 1
+	return button_states[button] == 1 and button_states_prev[button] == 0
 end
 
 local function update_button(button_node, button)
@@ -141,23 +147,31 @@ local function update_button(button_node, button)
 	end
 end
 
+local function update_dpad_button(node, is_pressed)
+    if is_pressed then
+        gui.set_blend_mode(node, gui.BLEND_ADD)
+    else
+        gui.set_color(node, vmath.vector4(1, 1, 1, 1))
+        gui.set_blend_mode(node, gui.BLEND_ALPHA)
+    end
+end
+
 --@package
 ---@param self gamepad_tester.gui_script
 ---@param dt number
 function update(self, dt)
-	
 	-- Check each button to see if it was pressed this frame
 	for i = 1, #button_states do
-        if was_pressed_this_frame(i) then
-            print("Button " .. i .. " was pressed this frame.")
-            -- Trigger any action needed for the button press
-        end
-    end
-	
+		if was_pressed_this_frame(i) then
+			print("Button " .. i .. " was pressed this frame.")
+			-- Trigger any action needed for the button press
+		end
+	end
+
 	-- Update previous states at the end of the frame
-    for i = 1, #button_states do
-        button_states_prev[i] = button_states[i]
-    end
+	for i = 1, #button_states do
+		button_states_prev[i] = button_states[i]
+	end
 
 	update_button(self.button_A, android_gamepad.BUTTON_A)
 	update_button(self.button_B, android_gamepad.BUTTON_B)
@@ -166,11 +180,40 @@ function update(self, dt)
 
 	update_button(self.button_L, android_gamepad.BUTTON_L1)
 	update_button(self.button_R, android_gamepad.BUTTON_R1)
-	
-	update_button(self.button_start, android_gamepad.BUTTON_START)
-	update_button(self.button_select, android_gamepad.BUTTON_SELECT)
-	
-	
 
-	android_gamepad.update(dt)--mandatory for android to work
+	update_button(self.button_start, android_gamepad.BUTTON_START)
+	update_button(self.button_back, android_gamepad.BUTTON_SELECT)
+
+	update_button(self.left_stick, android_gamepad.BUTTON_THUMBL)
+	update_button(self.right_stick, android_gamepad.BUTTON_THUMBR)
+
+	local left_joy = vmath.vector3(
+		android_gamepad.get_axis_value(android_gamepad.LEFT_JOYSTICK_HORIZONTAL),
+		android_gamepad.get_axis_value(android_gamepad.LEFT_JOYSTICK_VERTICAL),
+		0
+	)
+
+	self.left_stick_value = left_joy * STICK_MAX_DISTANCE
+	gui.set_position(self.left_stick, self.left_stick_pos + self.left_stick_value)
+
+	local right_joy = vmath.vector3(
+		android_gamepad.get_axis_value(android_gamepad.RIGHT_JOYSTICK_HORIZONTAL),
+		android_gamepad.get_axis_value(android_gamepad.RIGHT_JOYSTICK_VERTICAL),
+		0
+	)
+
+	self.right_stick_value = right_joy * STICK_MAX_DISTANCE
+	gui.set_position(self.right_stick, self.right_stick_pos + self.right_stick_value)
+
+	--finally the dpad or hats_text
+	update_dpad_button(self.left_pad_up, android_gamepad.is_hat_held(android_gamepad.HAT_UP))
+	update_dpad_button(self.left_pad_down, android_gamepad.is_hat_held(android_gamepad.HAT_DOWN))
+	update_dpad_button(self.left_pad_left, android_gamepad.is_hat_held(android_gamepad.HAT_LEFT))
+	update_dpad_button(self.left_pad_right, android_gamepad.is_hat_held(android_gamepad.HAT_RIGHT))
+
+	--the L_Trigger and R_Trigger
+	update_dpad_button(self.left_trigger,  android_gamepad.is_trigger_pressed(android_gamepad.L2))
+	update_dpad_button(self.right_trigger,  android_gamepad.is_trigger_pressed(android_gamepad.R2))
+
+	android_gamepad.update(dt) --mandatory for android to work
 end
