@@ -3,6 +3,8 @@ local STICK_MAX_DISTANCE = 30
 local button_states = {}
 local button_states_prev = {}
 
+local android_gamepad = require("modules.android_raw_gamepad")
+
 function init(self)
 	msg.post(".", "acquire_input_focus")
 	self.left_stick = gui.get_node("left_stick")
@@ -11,9 +13,21 @@ function init(self)
 	self.right_stick_pos = gui.get_position(self.right_stick)
 	self.left_stick_value = vmath.vector3()
 	self.right_stick_value = vmath.vector3()
+
+	self.button_A = gui.get_node("right_pad_down")
+	self.button_Y = gui.get_node("right_pad_up")
+	self.button_X = gui.get_node("right_pad_left")
+	self.button_B = gui.get_node("right_pad_right")
+
+	self.button_L = gui.get_node("gamepad_lshoulder")
+	self.button_R = gui.get_node("gamepad_rshoulder")
+	self.button_back = gui.get_node("gamepad_back")
+	self.button_start = gui.get_node("gamepad_start")
+
 	print("JJKJJ")
 	pprint(sys.get_sys_info())
 
+	android_gamepad.init()
 	-- Initialize button states for 32 possible buttons
 	for i = 1, 32 do
 		button_states[i] = 0
@@ -37,6 +51,9 @@ local function table_to_string(t)
 end
 
 function on_input(self, action_id, action)
+
+	android_gamepad.on_input(action_id,action)
+
 	if action_id == hash("raw") then
 
 		--copy the button states
@@ -115,6 +132,15 @@ function was_pressed_this_frame(button)
     return button_states[button] == 1 and button_states_prev[button] == 0
 end
 
+local function update_button(button_node, button)
+	if android_gamepad.is_pressed(button) then
+		gui.set_blend_mode(button_node, gui.BLEND_ADD)
+	else
+		gui.set_color(button_node, vmath.vector4(1, 1, 1, 1))
+		gui.set_blend_mode(button_node, gui.BLEND_ALPHA)
+	end
+end
+
 --@package
 ---@param self gamepad_tester.gui_script
 ---@param dt number
@@ -127,9 +153,24 @@ function update(self, dt)
             -- Trigger any action needed for the button press
         end
     end
-
+	
 	-- Update previous states at the end of the frame
     for i = 1, #button_states do
         button_states_prev[i] = button_states[i]
     end
+
+	update_button(self.button_A, android_gamepad.BUTTON_A)
+	update_button(self.button_B, android_gamepad.BUTTON_B)
+	update_button(self.button_Y, android_gamepad.BUTTON_Y)
+	update_button(self.button_X, android_gamepad.BUTTON_X)
+
+	update_button(self.button_L, android_gamepad.BUTTON_L1)
+	update_button(self.button_R, android_gamepad.BUTTON_R1)
+	
+	update_button(self.button_start, android_gamepad.BUTTON_START)
+	update_button(self.button_select, android_gamepad.BUTTON_SELECT)
+	
+	
+
+	android_gamepad.update(dt)--mandatory for android to work
 end
